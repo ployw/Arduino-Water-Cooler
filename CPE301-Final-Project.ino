@@ -55,16 +55,21 @@ volatile unsigned char *myTIFR1 = (unsigned char *)0x36;
 //current state
 State currentState = Disabled;
 
+//ISR
+const byte interruptPin = 2;
+volatile byte state = HIGH;
+
 void setup()
 {
   currentState = Disabled;
+
+  attachInterrupt(digitalPinToInterrupt(interruptPin), startRunning, RISING);
   lcd.begin(16, 2); // set up number of columns and rows
   
   //initialize the serial port on USART0:
   U0init(9600);
 
-  //set PK2 to INPUT
-  *ddr_k &= 0xEF;
+  //set interruptPin to input
 }
 
 void loop()
@@ -210,4 +215,9 @@ void my_delay(unsigned int freq) //takes frequency to make a delay
   *myTCCR1B &= 0xF8; // 0b 0000 0000
   // reset TOV
   *myTIFR1 |= 0x01;
+}
+
+void startRunning()
+{
+  currentState = Running;
 }
