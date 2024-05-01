@@ -8,7 +8,7 @@ enum State
   Idle,
   Error,
   Running
-}
+};
 
 //Realtime Clock
 #include <RTClib.h>
@@ -28,21 +28,20 @@ volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
 volatile unsigned int  *myUBRR0  = (unsigned int *) 0x00C4;
 volatile unsigned char *myUDR0   = (unsigned char *)0x00C6;
 
-//buttons
-//start
+//leds
 volatile unsigned char* port_k = (unsigned char*) 0x108; 
 volatile unsigned char* ddr_k  = (unsigned char*) 0x107; 
 volatile unsigned char* pin_k  = (unsigned char*) 0x106; 
 
-//reset
+volatile unsigned char* port_d = (unsigned char*) 0x2B; 
+volatile unsigned char* ddr_d  = (unsigned char*) 0x2A; 
+volatile unsigned char* pin_d  = (unsigned char*) 0x29; 
+
+//START button
 volatile unsigned char* port_e = (unsigned char*) 0x2E; 
 volatile unsigned char* ddr_e  = (unsigned char*) 0x2D; 
 volatile unsigned char* pin_e  = (unsigned char*) 0x2C; 
 
-//stop
-volatile unsigned char* port_d = (unsigned char*) 0x2B; 
-volatile unsigned char* ddr_d  = (unsigned char*) 0x2A; 
-volatile unsigned char* pin_d  = (unsigned char*) 0x29; 
 
 //TIMER
 volatile unsigned char *myTCCR1A = (unsigned char *)0x80;
@@ -59,6 +58,9 @@ State currentState = Disabled;
 const byte interruptPin = 2;
 volatile byte state = HIGH;
 
+//LEDs
+const byte bluePin = 21;
+
 void setup()
 {
   currentState = Disabled;
@@ -69,7 +71,16 @@ void setup()
   //initialize the serial port on USART0:
   U0init(9600);
 
+  //LEDs to output
+  *ddr_d |= (1 << bluePin);
+
   //set interruptPin to input
+  *ddr_e &= ~(1 << interruptPin); // Set as input
+  *port_e |= (1 << interruptPin); // Enable pull-up resistor
+  
+  // // Attach interrupt to the interrupt pin
+  // EICRA |= (1 << ISC20); // Trigger on any logical change
+  // EIMSK |= (1 << INT2); // Enable external interrupt 2
 }
 
 void loop()
@@ -102,9 +113,11 @@ void loop()
 
     break;
     case Running:
+      *port_e ^= (1 << bluePin);
       //motor is on
       //transition to idle if temp drops below threshold
       //transition to error if water is too low
+      //blue led
 
     break;
   }
