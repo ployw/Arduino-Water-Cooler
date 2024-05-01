@@ -1,4 +1,4 @@
 CPE301 Final Project
 Group Name
-Members: Ploy Wandeevong, Angelo Calingo, ____, ______
+Members: Ploy Wandeevong, Angelo Calingo, Rhiannon Barber
 
