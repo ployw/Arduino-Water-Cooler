@@ -78,16 +78,28 @@ void loop()
   switch(currentState)
   {
     case Disabled:
+      //yellow led is on
+      //no monitoring of water/temp
+      //monitor start button using ISR
 
     break;
     case Idle:
+      //record transition times
+      //water level is monitored, change to ERROR state if low
+      //green led is on
 
     break;
     case Error:
+      //motor is off
+      //red led
+      //reset button triggers change to idle stage is water is above the threshold
       displayError();
 
     break;
     case Running:
+      //motor is on
+      //transition to idle if temp drops below threshold
+      //transition to error if water is too low
 
     break;
   }
