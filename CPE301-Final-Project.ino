@@ -55,6 +55,7 @@ volatile unsigned char *myTIFR1 = (unsigned char *)0x36;
 
 //current state
 State currentState = Disabled;
+bool stateChanged = 0;
 
 //ISR/INTERRUPT
 volatile unsigned char *mySREG = (unsigned char *)0x5F;
@@ -77,6 +78,9 @@ dht DHT;
 void setup()
 {
   currentState = Disabled;
+
+  Wire.begin();
+  rtc.begin();
 
   lcd.begin(16, 2); // set up number of columns and rows
   
@@ -104,6 +108,11 @@ void setup()
 
 void loop()
 {
+  if(stateChanged)
+  {
+    printTime();
+  }
+
   if(currentState != Disabled)
   {
     
@@ -112,6 +121,7 @@ void loop()
   switch(currentState)
   {
     case Disabled:
+      stateChanged = 0;
       //Serial.println("DISABLED");
       //turn on yellow lED
       *port_l &= 0b11110001;
@@ -122,6 +132,7 @@ void loop()
 
     break;
     case Idle:
+      stateChanged = 0;
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
@@ -132,6 +143,7 @@ void loop()
 
     break;
     case Error:
+      stateChanged = 0;
       //red led
       *port_l &= 0b11111000;
       *port_l |= 0b00001000;
@@ -143,6 +155,7 @@ void loop()
 
     break;
     case Running:
+      stateChanged = 0;
       //Serial.println("RUNNING");
 
       //blue led
@@ -159,11 +172,13 @@ void loop()
 
 void startButtonISR()
 {
+  stateChanged = 1;
   currentState = Running;
 }
 
 void resetButtonISR()
 {
+  stateChanged = 1;
   currentState = Idle;
   //if water is above threshold, change to IDLE state
 }
@@ -172,6 +187,7 @@ void stopButtonISR()
 {
   if(currentState != Disabled)
   {
+    stateChanged = 1;
     currentState = Disabled;
   }
 }
