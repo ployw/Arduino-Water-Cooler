@@ -75,7 +75,6 @@ void setup()
 {
   currentState = Disabled;
 
-  attachInterrupt(digitalPinToInterrupt(20), startRunning, RISING);
   lcd.begin(16, 2); // set up number of columns and rows
   
   //initialize the serial port on USART0:
@@ -83,19 +82,21 @@ void setup()
   adc_init();
 
   //LEDs to output
-  *ddr_l |= 0b00001111; //pins 49-46
+  *ddr_l |= 0b00001111; //pins 49 (yellow), 48 (blue), 47 (green), 46 (red)
   *port_l &= 0b11110001;
   *port_l |= 0b00000001;
 
-  //set interruptPin to input
-  *port_d |= 0b00001100;
-  *ddr_d &= 0b11110111; //pin 20
+  //set interruptPins to input
+  *port_d |= 0b00000111;
+  *ddr_d &= 0b11111000; //pins 19 (start), 20 (reset), 21 (stop)
+  attachInterrupt(digitalPinToInterrupt(19), startButtonISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(20), resetButtonISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(21), stopButtonISR, RISING);
 
   //interrupt
-  *myEICRA |= 0b10100000; 
-  *myEICRA &= 0b10101111; 
-  *myEIMSK |= 0b00001100; 
   *mySREG |= 0b10000000;  
+
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 }
 
 void loop()
@@ -109,10 +110,11 @@ void loop()
   switch(currentState)
   {
     case Disabled:
+      //Serial.println("DISABLED");
       //turn on yellow lED
       *port_l &= 0b11110001;
       *port_l |= 0b00000001;
-      
+
       //no monitoring of water/temp
       //monitor start button using ISR
 
@@ -139,7 +141,7 @@ void loop()
 
     break;
     case Running:
-      Serial.println("RUNNING");
+      //Serial.println("RUNNING");
 
       //blue led
       *port_l &= 0b11110010;
@@ -151,6 +153,24 @@ void loop()
     break;
   }
 
+}
+
+void startButtonISR()
+{
+  currentState = Running;
+}
+
+void resetButtonISR()
+{
+  //if water is above threshold, change to IDLE state
+}
+
+void stopButtonISR()
+{
+  if(currentState != Disabled)
+  {
+    currentState = Disabled;
+  }
 }
 
 // function to initialize USART0 to "int" Baud, 8 data bits,no parity, and one stop bit. Assume FCPU = 16MHz
@@ -193,14 +213,13 @@ void displayError()
 
 void printTime()
 {
-  DateTime current = rtc.now();
-  int year = current.year();
-  int month = current.month();
-  int day = current.day();
-  int hour = current.hour();
-  int min = current.minute();
-  int sec = current.second();
-
+  DateTime now = rtc.now(); //crashes program if called too often
+  int year = now.year();
+  int month = now.month();
+  int day = now.day();
+  int hour = now.hour();
+  int minute = now.minute();
+  int second = now.second();
   char time[22] = {
     month / 10 + '0',
     month % 10 + '0',
@@ -219,11 +238,11 @@ void printTime()
     hour / 10 + '0',
     hour % 10 + '0',
     ':',
-    min / 10 + '0',
-    min % 10 + '0',
+    minute / 10 + '0',
+    minute % 10 + '0',
     ':',
-    sec / 10 + '0',
-    sec % 10 + '0',
+    second / 10 + '0',
+    second % 10 + '0',
   };
 
   for (int i = 0; i < 22; i++)
@@ -299,9 +318,4 @@ unsigned int adc_read(unsigned char adc_channel_num) //adc read
     ;
   // return the result in the ADC data register
   return *my_ADC_DATA;
-}
-
-void startRunning()
-{
-  currentState = Running;
 }
