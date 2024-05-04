@@ -84,7 +84,8 @@ void setup()
 
   //LEDs to output
   *ddr_l |= 0b00001111; //pins 49-46
-  *port_l &= 0b11110000;
+  *port_l &= 0b11110001;
+  *port_l |= 0b00000001;
 
   //set interruptPin to input
   *port_d |= 0b00001100;
@@ -111,30 +112,41 @@ void loop()
       //turn on yellow lED
       *port_l &= 0b11110001;
       *port_l |= 0b00000001;
+      
       //no monitoring of water/temp
       //monitor start button using ISR
 
     break;
     case Idle:
+      //green led
+      *port_l &= 0b11110100;
+      *port_l |= 0b00000100;
+
       //record transition times
       //water level is monitored, change to ERROR state if low
-      //green led is on
+
 
     break;
     case Error:
-      //motor is off
       //red led
+      *port_l &= 0b11111000;
+      *port_l |= 0b00001000;
+
+      //motor is off
+
       //reset button triggers change to idle stage is water is above the threshold
       displayError();
 
     break;
     case Running:
       Serial.println("RUNNING");
+
+      //blue led
       *port_l &= 0b11110010;
+      *port_l |= 0b00000010;
       //motor is on
       //transition to idle if temp drops below threshold
       //transition to error if water is too low
-      //blue led
 
     break;
   }
