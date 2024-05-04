@@ -65,7 +65,7 @@ volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
 //STEPPER
-Stepper stepper(STEPS, 22, 24, 23, 25);
+Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
@@ -75,7 +75,7 @@ void setup()
 {
   currentState = Disabled;
 
-  attachInterrupt(digitalPinToInterrupt(interruptPin), startRunning, RISING);
+  attachInterrupt(digitalPinToInterrupt(20), startRunning, RISING);
   lcd.begin(16, 2); // set up number of columns and rows
   
   //initialize the serial port on USART0:
@@ -84,7 +84,7 @@ void setup()
 
   //LEDs to output
   *ddr_l |= 0b00001111; //pins 49-46
-  *port_l &= 0b11110001;
+  *port_l &= 0b11110000;
 
   //set interruptPin to input
   *port_d |= 0b00001100;
@@ -108,8 +108,9 @@ void loop()
   switch(currentState)
   {
     case Disabled:
+      //turn on yellow lED
       *port_l &= 0b11110001;
-      //yellow led is on
+      *port_l |= 0b00000001;
       //no monitoring of water/temp
       //monitor start button using ISR
 
@@ -128,6 +129,7 @@ void loop()
 
     break;
     case Running:
+      Serial.println("RUNNING");
       *port_l &= 0b11110010;
       //motor is on
       //transition to idle if temp drops below threshold
