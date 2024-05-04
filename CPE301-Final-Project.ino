@@ -41,6 +41,9 @@ volatile unsigned char *pin_l = (unsigned char *)0x109;
 volatile unsigned char *port_d = (unsigned char *)0x2B;
 volatile unsigned char *ddr_d = (unsigned char *)0x2A;
 volatile unsigned char *pin_d = (unsigned char *)0x29;
+volatile unsigned char* port_e = (unsigned char*) 0x2E; 
+volatile unsigned char* ddr_e  = (unsigned char*) 0x2D; 
+volatile unsigned char* pin_e  = (unsigned char*) 0x2C;
 
 //TIMER
 volatile unsigned char *myTCCR1A = (unsigned char *)0x80;
@@ -87,21 +90,20 @@ void setup()
   *port_l |= 0b00000001;
 
   //set interruptPins to input
-  *port_d |= 0b00000111;
-  *ddr_d &= 0b11111000; //pins 19 (start), 20 (reset), 21 (stop)
+  *port_d |= 0b00001100;
+  *port_e |= 0b00000100;
+  *ddr_e &= 0b11111011; //pin 2 (reset)
+  *ddr_d &= 0b11110011; //pins 19 (start), 18 (stop)
   attachInterrupt(digitalPinToInterrupt(19), startButtonISR, RISING);
-  attachInterrupt(digitalPinToInterrupt(20), resetButtonISR, RISING);
-  attachInterrupt(digitalPinToInterrupt(21), stopButtonISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(2), resetButtonISR, RISING);
+  attachInterrupt(digitalPinToInterrupt(18), stopButtonISR, RISING);
 
   //interrupt
-  *mySREG |= 0b10000000;  
-
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  *mySREG |= 0b10000000;
 }
 
 void loop()
 {
-
   if(currentState != Disabled)
   {
     
@@ -162,6 +164,7 @@ void startButtonISR()
 
 void resetButtonISR()
 {
+  currentState = Idle;
   //if water is above threshold, change to IDLE state
 }
 
@@ -213,7 +216,7 @@ void displayError()
 
 void printTime()
 {
-  DateTime now = rtc.now(); //crashes program if called too often
+  DateTime now = rtc.now();
   int year = now.year();
   int month = now.month();
   int day = now.day();
