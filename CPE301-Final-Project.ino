@@ -73,9 +73,10 @@ Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
-#define DHT11_PIN 7
+#define DHT11_PIN 52
 
 //water sensor
+#define waterThreshold 40
 const int signalPin = A5;
 const int waterPowerPin = 53;
 unsigned int waterVal = 0;
@@ -134,19 +135,17 @@ void loop()
   {
     //turn on sensors
     *port_b |= 0b00000011;
-    //waterVal = adc_read(signalPin);
+    waterVal = adc_read(waterPowerPin);
+    int chk = DHT.read11(DHT11_PIN);
   }
   
   switch(currentState)
   {
     case Disabled:
-      if(stateChanged = 1)
-      {
-        lcd.setCursor(0, 0);
-        lcd.print("Off");
-      }
-
       stateChanged = 0;
+
+      lcd.setCursor(0, 0);
+      lcd.print("Off");
       //Serial.println("DISABLED");
       //turn on yellow lED
       *port_l &= 0b11110001;
@@ -161,6 +160,12 @@ void loop()
       stateChanged = 0;
       displayHumTemp();
       
+      if(waterVal >= waterThreshold)
+      {
+        stateChanged = 1;
+        currentState = Error;
+      }
+
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
@@ -261,7 +266,6 @@ void displayError()
 
 void displayHumTemp()
 {
-    int chk = DHT.read11(DHT11_PIN);
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(DHT.temperature);
