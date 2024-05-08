@@ -73,7 +73,7 @@ Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
-#define DHTPin 52
+#define DHT11_PIN 7
 
 //water sensor
 const int signalPin = A5;
@@ -93,7 +93,7 @@ void setup()
 
   lcd.begin(16, 2); // set up number of columns and rows
   lcd.setCursor(0, 0);
-  //lcd.print("Off");
+  lcd.print("Off");
   
   //initialize the serial port on USART0:
   U0init(9600);
@@ -158,8 +158,8 @@ void loop()
 
     break;
     case Idle:
-      displayHumTemp();
       stateChanged = 0;
+      displayHumTemp();
       
       //green led
       *port_l &= 0b11110100;
@@ -261,6 +261,7 @@ void displayError()
 
 void displayHumTemp()
 {
+    int chk = DHT.read11(DHT11_PIN);
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(DHT.temperature);
