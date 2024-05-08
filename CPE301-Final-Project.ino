@@ -190,7 +190,12 @@ void loop()
     break;
     case Running:
       stateChanged = 0;
-      //Serial.println("RUNNING");
+      
+      if(waterVal > waterThreshold)
+      {
+        stateChanged = 1;
+        currentState = Error;
+      }
 
       //blue led
       *port_l &= 0b11110010;
@@ -261,7 +266,7 @@ void U0putchar(unsigned char U0pdata)
 void displayError()
 {
   lcd.setCursor(0, 0);
-  lcd.print("ERROR");
+  lcd.print("Low water level);
 }
 
 void displayHumTemp()
