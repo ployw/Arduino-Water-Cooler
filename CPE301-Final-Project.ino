@@ -22,7 +22,7 @@ enum State
 RTC_DS1307 rtc;
 
 //LCD
-const int RS = 11, EN = 12, D4 = 2, D5 = 3, D6 = 4, D7 = 5;
+const int RS = 11, EN = 12, D4 = 3, D5 = 4, D6 = 5, D7 = 6;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
 //UART
@@ -73,6 +73,14 @@ Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
+#define DHTPin 10
+
+//water sensor
+const int waterPin = 0;
+unsigned int waterVal = 0;
+volatile unsigned char *port_b = (unsigned char *)0x25;
+volatile unsigned char *ddr_b = (unsigned char *)0x24;
+volatile unsigned char *pin_b = (unsigned char *)0x23;
 
 
 void setup()
@@ -83,10 +91,16 @@ void setup()
   rtc.begin();
 
   lcd.begin(16, 2); // set up number of columns and rows
+  lcd.setCursor(0, 0);
+  lcd.print("Off");
   
   //initialize the serial port on USART0:
   U0init(9600);
   adc_init();
+
+  //water sensor
+  *ddr_b |= 0b00000011;
+  *port_b &= 0b11111100;
 
   //LEDs to output
   *ddr_l |= 0b00001111; //pins 49 (yellow), 48 (blue), 47 (green), 46 (red)
@@ -115,7 +129,9 @@ void loop()
 
   if(currentState != Disabled)
   {
-    
+    //turn on water sensor
+    *port_b |= 0b00000011;
+    waterVal = adc_read(waterPin);
   }
   
   switch(currentState)
@@ -128,6 +144,7 @@ void loop()
       *port_l |= 0b00000001;
 
       //no monitoring of water/temp
+      *port_b &= 0b11111100;
       //monitor start button using ISR
 
     break;
@@ -228,6 +245,18 @@ void displayError()
 {
   lcd.setCursor(0, 0);
   lcd.print("ERROR");
+}
+
+void displayHumTemp()
+{
+    lcd.setCursor(0,0);
+    lcd.print("Temp: ");
+    lcd.print(DHT.temperature);
+    lcd.print("   ");
+    lcd.setCursor(0, 1);
+    lcd.print("Hum: ");
+    lcd.print(DHT.humidity);
+    lcd.print("   ");
 }
 
 void printTime()
