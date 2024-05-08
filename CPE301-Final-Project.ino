@@ -125,18 +125,25 @@ void loop()
   if(stateChanged)
   {
     printTime();
+    lcd.clear();
   }
 
   if(currentState != Disabled)
   {
     //turn on water sensor
     *port_b |= 0b00000011;
-    waterVal = adc_read(waterPin);
+    //waterVal = adc_read(waterPin);
   }
   
   switch(currentState)
   {
     case Disabled:
+      if(stateChanged = 1)
+      {
+        lcd.setCursor(0, 0);
+        lcd.print("Off");
+      }
+
       stateChanged = 0;
       //Serial.println("DISABLED");
       //turn on yellow lED
@@ -150,9 +157,11 @@ void loop()
     break;
     case Idle:
       stateChanged = 0;
+      displayHumTemp();
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
+
 
       //record transition times
       //water level is monitored, change to ERROR state if low
@@ -190,7 +199,7 @@ void loop()
 void startButtonISR()
 {
   stateChanged = 1;
-  currentState = Running;
+  currentState = Idle;
 }
 
 void resetButtonISR()
@@ -249,13 +258,13 @@ void displayError()
 
 void displayHumTemp()
 {
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print("Temp: ");
-    lcd.print(DHT.temperature);
+    //lcd.print(DHT.temperature);
     lcd.print("   ");
     lcd.setCursor(0, 1);
     lcd.print("Hum: ");
-    lcd.print(DHT.humidity);
+    //lcd.print(DHT.humidity);
     lcd.print("   ");
 }
 
