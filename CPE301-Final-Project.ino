@@ -73,10 +73,11 @@ Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
-#define DHTPin 10
+#define DHTPin 52
 
 //water sensor
-const int waterPin = 0;
+const int signalPin = A5;
+const int waterPowerPin = 53;
 unsigned int waterVal = 0;
 volatile unsigned char *port_b = (unsigned char *)0x25;
 volatile unsigned char *ddr_b = (unsigned char *)0x24;
@@ -92,13 +93,13 @@ void setup()
 
   lcd.begin(16, 2); // set up number of columns and rows
   lcd.setCursor(0, 0);
-  lcd.print("Off");
+  //lcd.print("Off");
   
   //initialize the serial port on USART0:
   U0init(9600);
   adc_init();
 
-  //water sensor
+  //sensors
   *ddr_b |= 0b00000011;
   *port_b &= 0b11111100;
 
@@ -125,14 +126,15 @@ void loop()
   if(stateChanged)
   {
     printTime();
+    lcd.setCursor(0, 0);
     lcd.clear();
   }
 
   if(currentState != Disabled)
   {
-    //turn on water sensor
+    //turn on sensors
     *port_b |= 0b00000011;
-    //waterVal = adc_read(waterPin);
+    //waterVal = adc_read(signalPin);
   }
   
   switch(currentState)
@@ -156,8 +158,9 @@ void loop()
 
     break;
     case Idle:
-      stateChanged = 0;
       displayHumTemp();
+      stateChanged = 0;
+      
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
@@ -260,11 +263,11 @@ void displayHumTemp()
 {
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
-    //lcd.print(DHT.temperature);
+    lcd.print(DHT.temperature);
     lcd.print("   ");
     lcd.setCursor(0, 1);
     lcd.print("Hum: ");
-    //lcd.print(DHT.humidity);
+    lcd.print(DHT.humidity);
     lcd.print("   ");
 }
 
