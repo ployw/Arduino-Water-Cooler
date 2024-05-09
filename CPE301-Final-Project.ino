@@ -73,17 +73,21 @@ Stepper stepper(32, 22, 24, 23, 25);
 
 //HUM/TEMP
 dht DHT;
-#define DHT11_PIN 52
+#define DHT11_PIN 7
+#define tempThreshold 20
 
 //water sensor
 #define waterThreshold 40
-const int signalPin = A5;
+const int signalPin = 5;
 const int waterPowerPin = 53;
 unsigned int waterVal = 0;
 volatile unsigned char *port_b = (unsigned char *)0x25;
 volatile unsigned char *ddr_b = (unsigned char *)0x24;
 volatile unsigned char *pin_b = (unsigned char *)0x23;
 
+//1 min delay
+const long interval = 60000;
+unsigned long previousMillis = 0;
 
 void setup()
 {
@@ -135,8 +139,21 @@ void loop()
   {
     //turn on sensors
     *port_b |= 0b00000011;
-    waterVal = adc_read(waterPowerPin);
+    waterVal = adc_read(signalPin);
+
     int chk = DHT.read11(DHT11_PIN);
+  }
+
+  if(currentState != Disabled && currentState != Error)
+  {
+    unsigned long currentMillis = millis();
+
+    //update lcd once per minute
+    if(currentMillis - previousMillis >= interval)
+    {
+      previousMillis = currentMillis;
+      displayHumTemp();
+    }
   }
   
   switch(currentState)
@@ -146,7 +163,7 @@ void loop()
 
       lcd.setCursor(0, 0);
       lcd.print("Off");
-      //Serial.println("DISABLED");
+
       //turn on yellow lED
       *port_l &= 0b11110001;
       *port_l |= 0b00000001;
@@ -158,9 +175,8 @@ void loop()
     break;
     case Idle:
       stateChanged = 0;
-      displayHumTemp();
       
-      if(waterVal >= waterThreshold)
+      if(waterVal <= waterThreshold)
       {
         stateChanged = 1;
         currentState = Error;
@@ -191,10 +207,16 @@ void loop()
     case Running:
       stateChanged = 0;
       
-      if(waterVal > waterThreshold)
+      if(waterVal < waterThreshold)
       {
         stateChanged = 1;
         currentState = Error;
+      }
+
+      if(DHT.temperature < tempThreshold)
+      {
+        stateChanged = 1;
+        currentState = Idle;
       }
 
       //blue led
@@ -217,9 +239,12 @@ void startButtonISR()
 
 void resetButtonISR()
 {
-  stateChanged = 1;
-  currentState = Idle;
   //if water is above threshold, change to IDLE state
+  if(waterVal >= waterThreshold)
+  {
+    stateChanged = 1;
+    currentState = Idle;
+  }
 }
 
 void stopButtonISR()
@@ -266,7 +291,7 @@ void U0putchar(unsigned char U0pdata)
 void displayError()
 {
   lcd.setCursor(0, 0);
-  lcd.print("Low water level);
+  lcd.print("Low water level");
 }
 
 void displayHumTemp()
