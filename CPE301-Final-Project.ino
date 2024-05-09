@@ -122,12 +122,12 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(2), resetButtonISR, RISING);
   attachInterrupt(digitalPinToInterrupt(18), stopButtonISR, RISING);
 
-  //interrupt
   *mySREG |= 0b10000000;
 }
 
 void loop()
 {
+  //if state changed, print the time and clear lcd
   if(stateChanged)
   {
     printTime();
@@ -140,7 +140,6 @@ void loop()
     //turn on sensors
     *port_b |= 0b00000011;
     waterVal = adc_read(signalPin);
-
     int chk = DHT.read11(DHT11_PIN);
   }
 
@@ -161,6 +160,7 @@ void loop()
     case Disabled:
       stateChanged = 0;
 
+      //print off
       lcd.setCursor(0, 0);
       lcd.print("Off");
 
@@ -170,20 +170,20 @@ void loop()
 
       //no monitoring of water/temp
       *port_b &= 0b11111100;
-      //monitor start button using ISR
-
     break;
     case Idle:
       stateChanged = 0;
       
       my_delay(1);
 
+      //if water level is low, change to error
       if(waterVal <= waterThreshold)
       {
         stateChanged = 1;
         currentState = Error;
       }
 
+      //if temp is above threshold, change to running
       if(DHT.temperature > tempThreshold)
       {
         stateChanged = 1;
@@ -193,34 +193,29 @@ void loop()
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
-
-
-      //record transition times
-      //water level is monitored, change to ERROR state if low
-
-
     break;
     case Error:
       stateChanged = 0;
+
       //red led
       *port_l &= 0b11111000;
       *port_l |= 0b00001000;
 
       //motor is off
 
-      //reset button triggers change to idle stage is water is above the threshold
       displayError();
-
     break;
     case Running:
       stateChanged = 0;
       
+      //if water is less than threshold, go to error
       if(waterVal < waterThreshold)
       {
         stateChanged = 1;
         currentState = Error;
       }
 
+      //if temp is less than threshold, go to idle
       if(DHT.temperature < tempThreshold)
       {
         stateChanged = 1;
@@ -230,10 +225,8 @@ void loop()
       //blue led
       *port_l &= 0b11110010;
       *port_l |= 0b00000010;
-      //motor is on
-      //transition to idle if temp drops below threshold
-      //transition to error if water is too low
 
+      //motor is on
     break;
   }
 
@@ -260,6 +253,7 @@ void resetButtonISR()
 
 void stopButtonISR()
 {
+  //every state, go to disabled
   if(currentState != Disabled)
   {
     stateChanged = 1;
