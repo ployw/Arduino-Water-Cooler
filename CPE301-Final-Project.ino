@@ -176,10 +176,18 @@ void loop()
     case Idle:
       stateChanged = 0;
       
+      my_delay(1);
+
       if(waterVal <= waterThreshold)
       {
         stateChanged = 1;
         currentState = Error;
+      }
+
+      if(DHT.temperature > tempThreshold)
+      {
+        stateChanged = 1;
+        currentState = Running;
       }
 
       //green led
@@ -233,14 +241,17 @@ void loop()
 
 void startButtonISR()
 {
-  stateChanged = 1;
-  currentState = Idle;
+  if(currentState == Disabled)
+  {
+    stateChanged = 1;
+    currentState = Idle;
+  }
 }
 
 void resetButtonISR()
 {
   //if water is above threshold, change to IDLE state
-  if(waterVal >= waterThreshold)
+  if(currentState == Error && waterVal >= waterThreshold)
   {
     stateChanged = 1;
     currentState = Idle;
