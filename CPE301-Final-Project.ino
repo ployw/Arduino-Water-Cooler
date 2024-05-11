@@ -190,6 +190,7 @@ void loop()
       int i = 0;
       for(i = 255; i > 100; i--)
       {
+          //14, 15, 16 (pj1, pj0, ph1 : dira, enable, dirb)
         digitalWrite(14, HIGH);
         digitalWrite(16, LOW);
         analogWrite(15, i);
