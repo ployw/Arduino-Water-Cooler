@@ -77,12 +77,14 @@ volatile unsigned char *ddr_h = (unsigned char *)0x101;
 volatile unsigned char *pin_h = (unsigned char *)0x100;
 
 //STEPPER
-Stepper stepper(32, 22, 24, 23, 25);
+Stepper stepper(32, 32, 34, 33, 35);
+int Pval = 0;
+int potVal = 0;
 
 //HUM/TEMP
 dht DHT;
 #define DHT11_PIN 7
-#define tempThreshold 20
+#define tempThreshold 28
 
 //water sensor
 #define waterThreshold 40
@@ -97,6 +99,7 @@ volatile unsigned char *pin_b = (unsigned char *)0x23;
 const long interval = 60000;
 unsigned long previousMillis = 0;
 
+
 void setup()
 {
   currentState = Disabled;
@@ -104,7 +107,7 @@ void setup()
   *ddr_j |= 0b00000010;  // set enable to be output pin14 pj1
   *ddr_j |= 0b00000001;  // set dira to be output pin 15 pj0
   *ddr_h |= 0b00000010;  // set dirb to be output pin16 ph1
-  *port_h |= 0b11111110;
+  *port_j &= 0b11111101;
 
   Wire.begin();
   rtc.begin();
@@ -116,6 +119,8 @@ void setup()
   //initialize the serial port on USART0:
   U0init(9600);
   adc_init();
+
+  stepper.setSpeed(1100);
 
   //sensors
   *ddr_b |= 0b00000011;
@@ -158,10 +163,44 @@ void loop()
     int chk = DHT.read11(DHT11_PIN);
   }
 
+  if(currentState != Error)
+  {
+    potVal = map(adc_read(15), 0, 1024, 0, 300);
+
+    int upperBound = potVal+10;
+    int lowerBound = potVal-10;
+
+    // if (!(lowerBound < Pval && upperBound > Pval))
+    // {
+      if(potVal > Pval)
+      {
+        stepper.step(2038);
+      }
+
+      if(potVal < Pval)
+      {
+        stepper.step(-2038);
+      }
+
+      // if(!(lowerBound-30 < Pval && upperBound+30 > Pval))
+      // {
+      //   char printarray[18] = "Vent adjusted at "; 
+      //   for (int i = 0; i < 18; i++)
+      //   {
+      //     U0putchar(printarray[i]); //replacement for serial println
+      //   }
+      //   printTime();
+      // }
+      
+      Pval = potVal;
+    // }
+  }
+  
+
   if(currentState != Running)
   {
     //turn off fan
-    //*port_j &= 0b11111101;
+    *port_j &= 0b11111101;
   }
 
   if(currentState != Disabled && currentState != Error)
@@ -186,13 +225,12 @@ void loop()
     case Disabled:
       stateChanged = 0;
 
-    //turn on fan
-    //*port_h |= 0b00000010;
-    //igitalWrite(16, HIGH);
-
       //print off
       lcd.setCursor(0, 0);
       lcd.print("Off                ");
+
+      lcd.setCursor(0, 1);
+      lcd.print("                ");
 
       //turn on yellow lED
       *port_l &= 0b11110001;
@@ -200,7 +238,7 @@ void loop()
 
       //no monitoring of water/temp
       *port_b &= 0b11111100;
-    break;
+      break;
     case Idle:
       stateChanged = 0;
       
@@ -220,6 +258,7 @@ void loop()
         currentState = Running;
       }
 
+      
       //green led
       *port_l &= 0b11110100;
       *port_l |= 0b00000100;
@@ -252,11 +291,13 @@ void loop()
         currentState = Idle;
       }
 
-      //blue led
-      *port_l &= 0b11110010;
-      *port_l |= 0b00000010;
+      *port_l &= 0b11110001;
+      *port_l |= 0b00000000;
 
-      //motor is on
+      *port_j &= 0b11111110; // set dir
+      *port_h |= 0b00000010; // set dir
+      *port_j |= 0b00000010; // turn on fan
+
     break;
   }
 
