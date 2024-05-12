@@ -1,6 +1,5 @@
 // CPE Final Project
 // Group Name
-//Ploy Wandeevong, Angelo Calingo
 
 #define RDA 0x80
 #define TBE 0x20  
@@ -32,15 +31,6 @@ volatile unsigned char *myUCSR0B = (unsigned char *)0x00C1;
 volatile unsigned char *myUCSR0C = (unsigned char *)0x00C2;
 volatile unsigned int  *myUBRR0  = (unsigned int *) 0x00C4;
 volatile unsigned char *myUDR0   = (unsigned char *)0x00C6;
-
-//fan 14, 15, 16 (pj1, pj0, ph1 : dira, enable, dirb)
-//potentiometer analog pin 1
-volatile unsigned char *port_j = (unsigned char *)0x105;
-volatile unsigned char *ddr_j = (unsigned char *)0x104;
-volatile unsigned char *pin_j = (unsigned char *)0x103;
-volatile unsigned char *port_h = (unsigned char *)0x102;
-volatile unsigned char *ddr_h = (unsigned char *)0x101;
-volatile unsigned char *pin_h = (unsigned char *)0x100;
 
 //leds
 volatile unsigned char *port_l = (unsigned char *)0x10B;
@@ -80,7 +70,6 @@ volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
 //STEPPER
 Stepper stepper(32, 22, 24, 23, 25);
-//stepper motor 22, 23, 24, 25 pa0 pa1 pa2 pa3
 
 //HUM/TEMP
 dht DHT;
@@ -104,8 +93,6 @@ void setup()
 {
   currentState = Disabled;
 
-  *mySREG &= 0b01111111;
-
   Wire.begin();
   rtc.begin();
 
@@ -116,11 +103,6 @@ void setup()
   //initialize the serial port on USART0:
   U0init(9600);
   adc_init();
-
-  //14, 15, 16 (pj1, pj0, ph1 : enable, dira, dirb)
-  *ddr_j |= 0b00000010;  // set enable to be output
-  *ddr_j |= 0b00000001;  // set dira to be output
-  *ddr_h |= 0b00000010;  // set dirb to be output
 
   //sensors
   *ddr_b |= 0b00000011;
@@ -140,8 +122,6 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(2), resetButtonISR, RISING);
   attachInterrupt(digitalPinToInterrupt(18), stopButtonISR, RISING);
 
-  //stepper.setSpeed(1100);
-
   *mySREG |= 0b10000000;
 }
 
@@ -153,12 +133,6 @@ void loop()
     printTime();
     lcd.setCursor(0, 0);
     lcd.clear();
-  }
-
-  if(currentState != Running)
-  {
-    //turn off fan
-    //*port_j &= 0b11111101;
   }
 
   if(currentState != Disabled)
@@ -185,16 +159,6 @@ void loop()
   {
     case Disabled:
       stateChanged = 0;
-
-      //*port_j |= 0b00000010;
-      int i = 0;
-      for(i = 255; i > 100; i--)
-      {
-        digitalWrite(14, HIGH);
-        digitalWrite(16, LOW);
-        analogWrite(15, i);
-        delay(200);
-      }
 
       //print off
       lcd.setCursor(0, 0);
@@ -257,9 +221,6 @@ void loop()
         stateChanged = 1;
         currentState = Idle;
       }
-
-      //turn on fan
-
 
       //blue led
       *port_l &= 0b11110010;
