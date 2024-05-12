@@ -68,6 +68,14 @@ volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
+//fan
+volatile unsigned char *port_j = (unsigned char *)0x105;
+volatile unsigned char *ddr_j = (unsigned char *)0x104;
+volatile unsigned char *pin_j = (unsigned char *)0x103;
+volatile unsigned char *port_h = (unsigned char *)0x102;
+volatile unsigned char *ddr_h = (unsigned char *)0x101;
+volatile unsigned char *pin_h = (unsigned char *)0x100;
+
 //STEPPER
 Stepper stepper(32, 22, 24, 23, 25);
 
@@ -92,6 +100,11 @@ unsigned long previousMillis = 0;
 void setup()
 {
   currentState = Disabled;
+
+  *ddr_j |= 0b00000010;  // set enable to be output pin14 pj1
+  *ddr_j |= 0b00000001;  // set dira to be output pin 15 pj0
+  *ddr_h |= 0b00000010;  // set dirb to be output pin16 ph1
+  *port_h |= 0b11111110;
 
   Wire.begin();
   rtc.begin();
@@ -145,6 +158,12 @@ void loop()
     int chk = DHT.read11(DHT11_PIN);
   }
 
+  if(currentState != Running)
+  {
+    //turn off fan
+    //*port_j &= 0b11111101;
+  }
+
   if(currentState != Disabled && currentState != Error)
   {
     if(stateChanged)
@@ -167,9 +186,13 @@ void loop()
     case Disabled:
       stateChanged = 0;
 
+    //turn on fan
+    //*port_h |= 0b00000010;
+    //igitalWrite(16, HIGH);
+
       //print off
       lcd.setCursor(0, 0);
-      lcd.print("Off");
+      lcd.print("Off                ");
 
       //turn on yellow lED
       *port_l &= 0b11110001;
