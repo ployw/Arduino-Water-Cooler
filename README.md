@@ -1,4 +1,3 @@
-CPE301 Final Project\n
-Group Name: BBL Drizzay\n
+CPE301 Final Project
+Group Name: BBL Drizzay
 Members: Ploy Wandeevong, Angelo Calingo
-
