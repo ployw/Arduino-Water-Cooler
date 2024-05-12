@@ -122,6 +122,8 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(2), resetButtonISR, RISING);
   attachInterrupt(digitalPinToInterrupt(18), stopButtonISR, RISING);
 
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
   *mySREG |= 0b10000000;
 }
 
@@ -145,6 +147,11 @@ void loop()
 
   if(currentState != Disabled && currentState != Error)
   {
+    if(stateChanged)
+    {
+      displayHumTemp();
+    }
+
     unsigned long currentMillis = millis();
 
     //update lcd once per minute
