@@ -163,6 +163,7 @@ void loop()
     int chk = DHT.read11(DHT11_PIN);
   }
 
+  //change vent direction
   if(currentState != Error)
   {
     potVal = map(adc_read(15), 0, 1024, 0, 300);
@@ -187,7 +188,7 @@ void loop()
         char printarray[18] = "Vent adjusted at "; 
         for (int i = 0; i < 18; i++)
         {
-          U0putchar(printarray[i]); //replacement for serial println
+          U0putchar(printarray[i]);
         }
         printTime();
       }
