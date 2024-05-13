@@ -120,7 +120,7 @@ void setup()
   U0init(9600);
   adc_init();
 
-  stepper.setSpeed(1100);
+  stepper.setSpeed(200);
 
   //sensors
   *ddr_b |= 0b00000011;
@@ -170,30 +170,30 @@ void loop()
     int upperBound = potVal+10;
     int lowerBound = potVal-10;
 
-    // if (!(lowerBound < Pval && upperBound > Pval))
-    // {
+    if (!(lowerBound < Pval && upperBound > Pval))
+     {
       if(potVal > Pval)
       {
-        stepper.step(2038);
+        stepper.step(10);
       }
 
       if(potVal < Pval)
       {
-        stepper.step(-2038);
+        stepper.step(-10);
       }
 
-      // if(!(lowerBound-30 < Pval && upperBound+30 > Pval))
-      // {
-      //   char printarray[18] = "Vent adjusted at "; 
-      //   for (int i = 0; i < 18; i++)
-      //   {
-      //     U0putchar(printarray[i]); //replacement for serial println
-      //   }
-      //   printTime();
-      // }
+      if(!(lowerBound-30 < Pval && upperBound+30 > Pval))
+      {
+        char printarray[18] = "Vent adjusted at "; 
+        for (int i = 0; i < 18; i++)
+        {
+          U0putchar(printarray[i]); //replacement for serial println
+        }
+        printTime();
+      }
       
       Pval = potVal;
-    // }
+    }
   }
   
 
